@@ -1,0 +1,6 @@
+Assign(varname='a')
+   └─ BinOp(op=None)
+      ├─ IntLit(value=2)
+      └─ BinOp(op=None)
+         ├─ IntLit(value=3)
+         └─ IntLit(value=2)
