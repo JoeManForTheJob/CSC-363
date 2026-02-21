@@ -89,7 +89,7 @@ class Tokenizer:
             if char not in VALID_VARS:
                 raise ValueError(f"Invalid variable character: {char}")
             else:
-                return Token(TokenType.VARREF, lexeme = f"{char}")
+                return Token(TokenType.VARREF, lexeme = f"{char}", name = f"{char}")
            
         raise ValueError(f"Unexpected character: {char!r}")
         
