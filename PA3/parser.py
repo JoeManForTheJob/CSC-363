@@ -1,3 +1,4 @@
+# Paste your parser here!
 from tokens import Token, TokenType
 from tokenstream import *
 from acdcast import *
@@ -93,8 +94,8 @@ def parse_expression(ts: TokenStream) -> ASTNode:
 
         if tok.tokentype == TokenType.VARREF:
             tok = ts.read()
-            #if tok.name is None:
-                #raise ParseError("Malformed VARREF token")
+            if tok.name is None:
+                raise ParseError("Malformed VARREF token")
             next = ts.peek()
             if (next.tokentype in operatortypes) or (next.tokentype == TokenType.RPAREN) or (next.tokentype == TokenType.EOF):
                 valstack.append(VarRefNode(tok.name))
@@ -183,7 +184,9 @@ def reduce(opstack: list, valstack: list) -> None:
         raise ParseError(f"Expected two operands for operator {opstack[-1].tokentype}")
     rhs = valstack.pop()
     lhs = valstack.pop()
-    valstack.append(BinOpNode(opstack.pop(), lhs, rhs))
+    popped = opstack.pop()
+    #print(popped.tokentype)
+    valstack.append(BinOpNode(popped.tokentype, lhs, rhs))
     return None
 
 def expect(ts: TokenStream, expectedtype: TokenType) -> Token:
