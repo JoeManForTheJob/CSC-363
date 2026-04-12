@@ -1,0 +1,74 @@
+from .ASTNode import ASTNode
+from enum import Enum
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+  from .visitor import ASTVisitor
+
+class CondNode(ASTNode):
+  class OpType(Enum):
+    EQ = 1
+    NE = 2
+    LT = 3
+    LE = 4
+    GT = 5
+    GE = 6
+
+  def getOpFromString(self, op: str):
+    if op == '==':
+      return self.OpType.EQ # these should have self I think or maybe 
+    elif op == '!=':
+      return self.OpType.NE # otherwise we get OpType not defined error in docker
+    elif op == '<':
+      return self.OpType.LT
+    elif op == '<=':
+      return self.OpType.LE
+    elif op == '>':
+      return self.OpType.GT
+    elif op == '>=':
+      return self.OpType.GE
+    else:
+      raise Exception("invalid op in CondNode")
+
+  def __init__(self, left: ASTNode, right: ASTNode, op: str):
+    self.setLeft(left)
+    self.setRight(right)
+    self.setOp(self.getOpFromString(op)) # change here such that the function is useful
+
+  def accept(self, visitor: 'ASTVisitor') -> Any:
+    return visitor.visitCondNode(self)
+
+  def getLeft(self) -> ASTNode:
+    return self.left
+
+  def setLeft(self, left: ASTNode):
+    self.left = left
+
+  def getRight(self) -> ASTNode:
+    return self.right
+
+  def setRight(self, right: ASTNode):
+    self.right = right  
+
+  def getOp(self) -> OpType: # just OpType?
+    return self.op # only if we define what an oc is 
+
+  def setOp(self, op: OpType): # just OpType?
+    self.op = op # see previous comment
+ 
+  def getReversedOp(self, op: OpType) -> OpType: # just OpType?
+    if op == self.OpType.LE:
+      return self.OpType.GT
+    elif op == self.OpType.LT:
+      return self.OpType.GE
+    elif op == self.OpType.GE:
+      return self.OpType.LT
+    elif op == self.OpType.GT:
+      return self.OpType.LE
+    elif op == self.OpType.EQ:
+      return self.OpType.NE
+    elif op == self.OpType.NE:
+      return self.OpType.EQ
+    else:
+      raise Exception("Bad op type")
+
