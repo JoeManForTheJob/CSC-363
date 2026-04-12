@@ -399,7 +399,7 @@ class CodeGenerator(AbstractASTVisitor):
     '''
     co = CodeObject()
 
-    #self._incrnumCtrlStruct()
+    self._incrnumCtrlStruct()
     labelnum = self._ctrlLabelStack.pop()
 
     elselabel = self._generateElseLabel(labelnum)
@@ -495,9 +495,6 @@ class CodeGenerator(AbstractASTVisitor):
 
   def _incrnumCtrlStruct(self):
     self.numCtrlStructs += 1
-
-  def _peeknumCtrlStruct(self, offest = 1):
-    return self._getnumCtrlStruct() + offest
 
   def _getnumCtrlStruct(self) -> int:
     return self.numCtrlStructs
