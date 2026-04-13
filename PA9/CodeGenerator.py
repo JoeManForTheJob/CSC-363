@@ -17,7 +17,6 @@ class CodeGenerator(AbstractASTVisitor):
     self.floatTempPrefix = 'f'
     self.numCtrlStructs = 1
     self.elselabel = ''
-    self._ctrlLabelStack = []
 
     # Put code here for label counting
 
@@ -296,60 +295,19 @@ class CodeGenerator(AbstractASTVisitor):
       raise Exception("Bad cmp types in CondNode!")
     
     node.setOp(node.getReversedOp(node.getOp())) # Reverse comparison type
-      
-    if right.lval:
-      right = self.rvalify(right)
-    co.code.extend(right.code)
-    if left.lval:
+    
+    if left.lval is True:
       left = self.rvalify(left)
     co.code.extend(left.code)
-    
+    if right.lval is True:
+      right = self.rvalify(right)
+    co.code.extend(right.code)
 
-    labelnum = self._getnumCtrlStruct() + 1
-    self._ctrlLabelStack.append(labelnum)
-    elselabel = self._generateElseLabel(labelnum)
-    optype = str(node.getOp())
-
-    if left.type == Scope.Type.INT:
-      if optype == 'OpType.EQ':
-        co.code.append(Beq(left.temp, right.temp, elselabel))
-      elif optype == 'OpType.NE':
-        co.code.append(Bne(left.temp, right.temp, elselabel))
-      elif optype == 'OpType.LT':
-        co.code.append(Blt(left.temp, right.temp, elselabel))      
-      elif optype == 'OpType.LE':
-        co.code.append(Ble(left.temp, right.temp, elselabel))
-      elif optype == 'OpType.GT':
-        co.code.append(Bgt(left.temp, right.temp, elselabel))
-      elif optype == 'OpType.GE':
-        co.code.append(Bge(left.temp, right.temp, elselabel))    
-      else:
-        raise Exception("Bad Cond in CondNode!")
-      
-    elif left.type == Scope.Type.FLOAT:
-      fcmptemp = self.generateTemp(Scope.Type.INT)
-      if optype == 'OpType.EQ':
-        co.code.append(Feq(left.temp, right.temp, fcmptemp))
-        co.code.append(Beq(fcmptemp, 'x0', elselabel))
-      elif optype == 'OpType.NE':
-        co.code.append(Feq(left.temp, right.temp, fcmptemp))
-        co.code.append(Bne(fcmptemp, 'x0', elselabel))
-      elif optype == 'OpType.LT':
-        co.code.append(Flt(left.temp, right.temp, fcmptemp))
-        co.code.append(Bne(fcmptemp, 'x0', elselabel))
-      elif optype == 'OpType.LE':
-        co.code.append(Fle(left.temp, right.temp, fcmptemp))
-        co.code.append(Bne(fcmptemp, 'x0', elselabel))
-      elif optype == 'OpType.GT':
-        co.code.append(Fle(left.temp, right.temp, fcmptemp))
-        co.code.append(Beq(fcmptemp, 'x0', elselabel))
-      elif optype == 'OpType.GE':
-        co.code.append(Flt(left.temp, right.temp, fcmptemp))
-        co.code.append(Beq(fcmptemp, 'x0', elselabel))
-      else:
-        raise Exception("Bad Cond in CondNode")
-      
-
+    # Store temps for use by if/while nodes
+    co.leftTemp = left.temp
+    co.rightTemp = right.temp
+    co.optype = str(node.getOp())
+    co.leftType = left.type
     return co
 
 
@@ -364,7 +322,7 @@ class CodeGenerator(AbstractASTVisitor):
 
 
     self._incrnumCtrlStruct()
-    labelnum = self._ctrlLabelStack.pop()
+    labelnum = self._getnumCtrlStruct()
 
 
     donelabel = self._generateDoneLabel(labelnum)
@@ -377,7 +335,58 @@ class CodeGenerator(AbstractASTVisitor):
     #self._incrnumCtrlStruct()
 
     
+    #co.code.extend(cond.code)
+    
+        
+
+    #labelnum = self._getnumCtrlStruct() + 1
+    #self._ctrlLabelStack.append(labelnum)
+    #elselabel = self._generateElseLabel(labelnum)
     co.code.extend(cond.code)
+
+    left = cond.leftTemp
+    right = cond.rightTemp
+    optype = cond.optype
+    leftType = cond.leftType
+    if leftType == Scope.Type.INT:
+      if optype == 'OpType.EQ':
+        co.code.append(Beq(left, right, elselabel))
+      elif optype == 'OpType.NE':
+        co.code.append(Bne(left, right, elselabel))
+      elif optype == 'OpType.LT':
+        co.code.append(Blt(left, right, elselabel))      
+      elif optype == 'OpType.LE':
+        co.code.append(Ble(left, right, elselabel))
+      elif optype == 'OpType.GT':
+        co.code.append(Bgt(left, right, elselabel))
+      elif optype == 'OpType.GE':
+        co.code.append(Bge(left, right, elselabel))    
+      else:
+        raise Exception("Bad Cond in CondNode!")
+      
+    elif leftType == Scope.Type.FLOAT:
+      fcmptemp = self.generateTemp(Scope.Type.INT)
+      if optype == 'OpType.EQ':
+        co.code.append(Feq(left, right, fcmptemp))
+        co.code.append(Beq(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.NE':
+        co.code.append(Feq(left, right, fcmptemp))
+        co.code.append(Bne(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.LT':
+        co.code.append(Flt(left, right, fcmptemp))
+        co.code.append(Bne(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.LE':
+        co.code.append(Fle(left, right, fcmptemp))
+        co.code.append(Bne(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.GT':
+        co.code.append(Fle(left, right, fcmptemp))
+        co.code.append(Beq(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.GE':
+        co.code.append(Flt(left, right, fcmptemp))
+        co.code.append(Beq(fcmptemp, 'x0', elselabel))
+      else:
+        raise Exception("Bad Cond in CondNode")
+      
 
 
     co.code.extend(tlist.code)
@@ -400,7 +409,7 @@ class CodeGenerator(AbstractASTVisitor):
     co = CodeObject()
 
     self._incrnumCtrlStruct()
-    labelnum = self._ctrlLabelStack.pop()
+    labelnum = self._getnumCtrlStruct()
 
     elselabel = self._generateElseLabel(labelnum)
     looplabel = self._generateLoopLabel(labelnum)
@@ -411,6 +420,50 @@ class CodeGenerator(AbstractASTVisitor):
 
     co.code.append(colonloop)
     co.code.extend(cond.code)
+
+    left = cond.leftTemp
+    right = cond.rightTemp
+    optype = cond.optype
+    leftType = cond.leftType
+    if leftType == Scope.Type.INT:
+      if optype == 'OpType.EQ':
+        co.code.append(Beq(left, right, elselabel))
+      elif optype == 'OpType.NE':
+        co.code.append(Bne(left, right, elselabel))
+      elif optype == 'OpType.LT':
+        co.code.append(Blt(left, right, elselabel))      
+      elif optype == 'OpType.LE':
+        co.code.append(Ble(left, right, elselabel))
+      elif optype == 'OpType.GT':
+        co.code.append(Bgt(left, right, elselabel))
+      elif optype == 'OpType.GE':
+        co.code.append(Bge(left, right, elselabel))    
+      else:
+        raise Exception("Bad Cond in CondNode!")
+      
+    elif leftType == Scope.Type.FLOAT:
+      fcmptemp = self.generateTemp(Scope.Type.INT)
+      if optype == 'OpType.EQ':
+        co.code.append(Feq(left, right, fcmptemp))
+        co.code.append(Beq(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.NE':
+        co.code.append(Feq(left, right, fcmptemp))
+        co.code.append(Bne(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.LT':
+        co.code.append(Flt(left, right, fcmptemp))
+        co.code.append(Bne(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.LE':
+        co.code.append(Fle(left, right, fcmptemp))
+        co.code.append(Bne(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.GT':
+        co.code.append(Fle(left, right, fcmptemp))
+        co.code.append(Beq(fcmptemp, 'x0', elselabel))
+      elif optype == 'OpType.GE':
+        co.code.append(Flt(left, right, fcmptemp))
+        co.code.append(Beq(fcmptemp, 'x0', elselabel))
+      else:
+        raise Exception("Bad Cond in CondNode")
+      
     co.code.extend(wlist.code)
     co.code.append(J(looplabel))
     co.code.append(colonelse)
